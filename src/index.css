@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-sky-50 text-slate-800 font-sans antialiased;
+  }
+}
+
+.sky-gradient {
+  background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+}
+
+.glass-card {
+  @apply bg-white/90 backdrop-blur-md border border-sky-100/50;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #38bdf8;
+  border-radius: 10px;
+}
+
+.markdown-body {
+  @apply prose prose-sky max-w-none;
+}
+
+.markdown-body pre {
+  @apply bg-slate-900 text-slate-50 p-4 rounded-xl overflow-x-auto my-4;
+}
+
+.markdown-body code {
+  @apply font-mono text-sky-600 font-semibold;
+}
+
+.markdown-body strong {
+  @apply text-sky-800;
+}
+
+.markdown-body blockquote {
+  @apply border-l-4 border-sky-500 bg-sky-50/50 p-4 rounded-r-lg italic;
+}
+
+.card-shadow {
+  box-shadow: 0 4px 20px -2px rgba(2, 132, 199, 0.1);
+}
+
+@utility perspective-1000 {
+  perspective: 1000px;
+}
+
+@utility preserve-3d {
+  transform-style: preserve-3d;
+}
+
+@utility backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Áp dụng cho khung hiển thị nội dung của AI */
+.message-content {
+  /* 1. Chọn font chữ hiện đại, dễ đọc cho học sinh */
+  font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.6; /* Độ giãn dòng vừa phải để không bị quá thưa */
+
+  /* 2. Dàn đều văn bản (Justify) */
+  text-align: justify;
+  text-justify: inter-word; /* Giúp các khoảng trắng giữa các từ đều nhau */
+  
+  /* 3. Chống tràn và khoảng trắng thừa */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Định dạng các đoạn văn bên trong */
+.message-content p {
+  margin-bottom: 12px; /* Khoảng cách giữa các đoạn vừa đủ */
+}
+

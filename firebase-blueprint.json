@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Học sinh",
+      "description": "Thông tin cá nhân và tiến trình học tập của học sinh",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "description": "Tên hiển thị" },
+        "xp": { "type": "integer", "description": "Điểm kinh nghiệm" },
+        "level": { "type": "string", "description": "Cấp độ (Tập sự, Chuyên gia, Bác học)" },
+        "photoURL": { "type": "string", "description": "Ảnh đại diện" },
+        "lastActive": { "type": "string", "format": "date-time" },
+        "streak": { "type": "integer", "description": "Số ngày học liên tiếp" },
+        "lastLoginDate": { "type": "string", "description": "Ngày đăng nhập cuối (YYYY-MM-DD)" },
+        "badges": { "type": "array", "items": { "type": "string" }, "description": "Danh hiệu đạt được" },
+        "completedChallenges": { "type": "array", "items": { "type": "string" }, "description": "ID các thử thách ngày đã xong" }
+      },
+      "required": ["displayName", "xp", "level"]
+    },
+    "Document": {
+      "title": "Tài liệu học tập",
+      "description": "Dữ liệu tri thức phục vụ RAG",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["pdf", "docx", "txt"] }
+      },
+      "required": ["title", "content", "uploadedAt"]
+    },
+    "ChatMessage": {
+      "title": "Tin nhắn",
+      "description": "Lịch sử trò chuyện giữa học sinh và AI",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "hasImage": { "type": "boolean" }
+      },
+      "required": ["studentId", "role", "content", "timestamp"]
+    },
+    "Quiz": {
+      "title": "Trắc nghiệm",
+      "description": "Bài kiểm tra tự động tạo",
+      "type": "object",
+      "properties": {
+        "topic": { "type": "string" },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string" },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "answerIndex": { "type": "integer" },
+              "explanation": { "type": "string" }
+            }
+          }
+        },
+        "studentId": { "type": "string" },
+        "score": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Config": {
+      "title": "Cấu hình hệ thống",
+      "description": "Cấu hình chung cho hệ thống, ví dụ: logo trường",
+      "type": "object",
+      "properties": {
+        "logoUrl": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/config/{configId}": {
+      "schema": "Config",
+      "description": "Cấu hình hệ thống"
+    },
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Dữ liệu học sinh"
+    },
+    "/documents/{docId}": {
+      "schema": "Document",
+      "description": "Metadata tài liệu"
+    },
+    "/knowledge_base/{chunkId}": {
+      "schema": "KnowledgeChunk",
+      "description": "Các mảnh tri thức RAG"
+    },
+    "/arena_results/{resultId}": {
+      "schema": "ArenaResult",
+      "description": "Kết quả thi đấu và xếp hạng"
+    },
+    "/messages/{msgId}": {
+      "schema": "ChatMessage",
+      "description": "Lịch sử chat"
+    },
+    "/quizzes/{quizId}": {
+      "schema": "Quiz",
+      "description": "Lịch sử làm bài tập"
+    }
+  }
+}

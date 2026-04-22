@@ -1,0 +1,21 @@
+{
+  "name": "Gia sư AI KHTN Trường THCS Phước Tân 3",
+  "short_name": "Gia sư KHTN",
+  "description": "Gia sư thông minh hỗ trợ học tập môn KHTN",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d9488",
+  "theme_color": "#0d9488",
+  "icons": [
+    {
+      "src": "/trangtruong.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/trangtruong.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

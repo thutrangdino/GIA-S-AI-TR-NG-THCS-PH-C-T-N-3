@@ -1,0 +1,9 @@
+{
+  "name": "Gia sư AI KHTN Trường THCS Phước Tân 3",
+  "description": "Ứng dụng gia sư thông minh dành cho học sinh KHTN THCS Phước Tân 3, sử dụng phương pháp gợi mở Socratic và hệ thống Gamification.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": []
+}
