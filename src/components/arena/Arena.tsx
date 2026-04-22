@@ -228,7 +228,28 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <div className="grid grid-cols-1 gap-8 mb-12">
+               <div className="space-y-3">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">📚 Chủ đề thách đấu</label>
+                  <input 
+                    type="text" 
+                    value={battleConfig.topic}
+                    onChange={(e) => setBattleConfig(prev => ({ ...prev, topic: e.target.value }))}
+                    placeholder="Ví dụ: Quang hợp, Nguyên tử..."
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-5 outline-none focus:border-orange-500 focus:bg-white transition-all font-bold text-orange-900"
+                  />
+               </div>
+               <div className="space-y-3">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">🔢 Số câu hỏi (Tối đa 20)</label>
+                  <input 
+                    type="number" 
+                    min="1"
+                    max="20"
+                    value={battleConfig.count}
+                    onChange={(e) => setBattleConfig(prev => ({ ...prev, count: Math.min(20, Math.max(1, parseInt(e.target.value) || 1)) }))}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-5 outline-none focus:border-orange-500 focus:bg-white transition-all font-bold text-orange-900"
+                  />
+               </div>
                <div className="space-y-3">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">📦 Khối lớp</label>
                   <select 
@@ -244,16 +265,6 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
                   </select>
                </div>
                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">📚 Chủ đề thách đấu</label>
-                  <input 
-                    type="text" 
-                    value={battleConfig.topic}
-                    onChange={(e) => setBattleConfig(prev => ({ ...prev, topic: e.target.value }))}
-                    placeholder="Ví dụ: Quang hợp, Nguyên tử..."
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-5 outline-none focus:border-orange-500 focus:bg-white transition-all font-bold text-orange-900"
-                  />
-               </div>
-               <div className="space-y-3">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">📝 Dạng bài thách đấu</label>
                   <select 
                     value={battleConfig.type}
@@ -264,17 +275,6 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
                      <option value="Tự luận">Tự luận</option>
                      <option value="Trắc nghiệm & Tự luận">Trắc nghiệm & Tự luận</option>
                   </select>
-               </div>
-               <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">🔢 Số câu hỏi (Tối đa 20)</label>
-                  <input 
-                    type="number" 
-                    min="1"
-                    max="20"
-                    value={battleConfig.count}
-                    onChange={(e) => setBattleConfig(prev => ({ ...prev, count: Math.min(20, Math.max(1, parseInt(e.target.value) || 1)) }))}
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-5 outline-none focus:border-orange-500 focus:bg-white transition-all font-bold text-orange-900"
-                  />
                </div>
 
                <div className="md:col-span-2 p-5 bg-orange-50 rounded-3xl border border-orange-100">
@@ -591,7 +591,7 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                       <div 
-                        className="bg-gradient-to-br from-sky-500 to-sky-700 rounded-[2rem] p-6 text-white shadow-2xl group cursor-pointer relative overflow-hidden h-64 flex flex-col"
+                        className="bg-gradient-to-br from-sky-500 to-sky-700 rounded-[2rem] p-6 text-white shadow-2xl group cursor-pointer relative overflow-hidden h-48 flex flex-col"
                         onClick={findMatch}
                       >
                         <Users size={80} className="absolute -right-4 -bottom-4 opacity-20 group-hover:scale-110 transition-transform" />
@@ -603,7 +603,7 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
                       </div>
 
                       <div 
-                         className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-[2rem] p-6 text-white shadow-2xl group cursor-pointer relative overflow-hidden h-64 flex flex-col"
+                         className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-[2rem] p-6 text-white shadow-2xl group cursor-pointer relative overflow-hidden h-48 flex flex-col"
                          onClick={startAiMatch}
                       >
                         <Bot size={80} className="absolute -right-4 -bottom-4 opacity-20 group-hover:scale-110 transition-transform" />
@@ -615,7 +615,7 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
                       </div>
 
                       <div 
-                         className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden h-64 flex flex-col"
+                         className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden h-48 flex flex-col"
                       >
                         <Medal size={80} className="absolute -right-4 -bottom-4 opacity-20" />
                         <h4 className="text-xl font-display font-black mb-2">Bảng danh hiệu</h4>

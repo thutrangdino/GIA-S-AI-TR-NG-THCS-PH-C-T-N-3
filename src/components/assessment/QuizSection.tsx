@@ -747,24 +747,23 @@ export default function QuizSection({ studentName, addXP, userId }: { studentNam
                   </select>
                 </div>
 
-                <div className="flex gap-3">
-                  <input 
-                    type="text" 
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    placeholder="Chủ đề ôn tập..."
-                    className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3 outline-none focus:border-sky-500 transition-all font-bold text-sky-900 text-xs"
-                  />
-                  <input 
-                    type="number" 
-                    max={20}
-                    min={1}
-                    value={quizCount || ""}
-                    onChange={(e) => setQuizCount(Math.min(20, parseInt(e.target.value) || 0))}
-                    placeholder="Số câu (Max 20)"
-                    className="w-24 bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3 outline-none focus:border-sky-500 transition-all font-bold text-sky-900 text-xs"
-                  />
-                </div>
+                <input 
+                  type="text" 
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="Chủ đề ôn tập..."
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3 outline-none focus:border-sky-500 transition-all font-bold text-sky-900 text-xs"
+                />
+                
+                <input 
+                  type="number" 
+                  max={20}
+                  min={1}
+                  value={quizCount || ""}
+                  onChange={(e) => setQuizCount(Math.min(20, parseInt(e.target.value) || 0))}
+                  placeholder="Số câu (Max 20)"
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3 outline-none focus:border-sky-500 transition-all font-bold text-sky-900 text-xs"
+                />
               </div>
 
               <button 

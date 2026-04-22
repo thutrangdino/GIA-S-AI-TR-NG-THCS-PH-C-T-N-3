@@ -225,17 +225,6 @@ export default function App() {
             {/* Header Navigation */}
             <header className="flex items-center justify-between bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 shrink-0">
               <div className="flex items-center space-x-3">
-                {schoolLogo ? (
-                 <img 
-                    src="https://storage.googleapis.com/genai-agent-user-files/0e32152a-9f5b-4395-8e2b-f41a877992fc/input_file_0.png" 
-                    alt="School Logo" 
-                    className="h-[60px] w-auto object-contain transition-transform duration-300 hover:scale-105"
-                 />
-                ) : (
-                  <div className="w-10 h-10 bg-sky-50 rounded-lg flex items-center justify-center text-sky-600 border border-sky-100">
-                    <UserIcon size={20} />
-                  </div>
-                )}
                 <div className="flex flex-col items-start hidden md:block">
                   <h1 className="text-xl font-bold text-sky-900 leading-none tracking-tight uppercase">Gia sư AI KHTN</h1>
                   <p className="text-[10px] text-black font-black mt-1">Khám phá tri thức - Kiến tạo tương lai</p>
@@ -513,25 +502,6 @@ export default function App() {
                    </AnimatePresence>
                 </div>
               </div>
-
-              {/* Arena Callout */}
-              <div className="bg-orange-50 rounded-[2rem] p-8 border border-orange-100 flex-shrink-0 shadow-sm relative overflow-hidden group">
-                <div className="relative z-10">
-                  <h3 className="font-bold text-orange-800 text-sm flex items-center tracking-tight uppercase">
-                    <Star size={16} className="mr-2 fill-orange-500 text-orange-500 animate-pulse" />
-                    ĐẤU TRƯỜNG ĐANG MỞ
-                  </h3>
-                  <p className="text-[11px] text-orange-700 mt-3 mb-5 leading-relaxed font-medium">Thách đấu cùng <b>bạn khác</b> đang online để nhận X2 điểm thưởng.</p>
-                  <button 
-                    onClick={() => setActiveTab("arena")}
-                    className="w-full bg-orange-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg shadow-orange-200/50 active:scale-[0.98]"
-                  >
-                    THAM GIA
-                  </button>
-                </div>
-                {/* Visual Interest */}
-                <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-orange-200/20 rounded-full blur-2xl group-hover:scale-110 transition-transform"></div>
-              </div>
             </aside>
 
             {/* Main Content Area - RIGHT on desktop */}
@@ -678,36 +648,7 @@ function LoginScreen({ schoolLogo }: { schoolLogo: string | null }) {
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-10 text-center"
       >
-        <div className={cn(
-          "relative w-32 h-32 mx-auto mb-8 bg-sky-50 rounded-3xl flex items-center justify-center border-2 border-sky-100 shadow-md overflow-hidden group transition-all",
-          !schoolLogo && "cursor-pointer hover:scale-105"
-        )}>
-          {!schoolLogo && (
-            <label className="absolute inset-0 z-10 cursor-pointer">
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-            </label>
-          )}
-          
-          {(previewUrl || "https://storage.googleapis.com/genai-agent-user-files/0e32152a-9f5b-4395-8e2b-f41a877992fc/input_file_0.png") ? (
-            <img 
-              src={previewUrl || "https://storage.googleapis.com/genai-agent-user-files/0e32152a-9f5b-4395-8e2b-f41a877992fc/input_file_0.png"} 
-              alt="School Logo" 
-              className="h-[60px] w-auto object-contain transition-transform duration-300 hover:scale-105"
-              style={{ imageRendering: 'auto' }}
-            />
-          ) : (
-            <UserIcon size={48} className="text-sky-300" />
-          )}
-
-          {!schoolLogo && (
-            <div className="absolute inset-0 bg-sky-900/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <ImageIcon size={24} className="text-white mb-2" />
-              <span className="text-white text-[10px] font-black uppercase tracking-widest text-center px-2">Cập nhật ảnh</span>
-            </div>
-          )}
-        </div>
-        
-        <div className="mb-8">
+        <div className="mb-8 mt-4">
           <h1 className="text-3xl font-display font-black text-sky-900 mb-2 tracking-tight">Gia sư AI KHTN</h1>
           <p className="text-black font-bold text-sm tracking-tight uppercase">Trường THCS Phước Tân 3</p>
         </div>
