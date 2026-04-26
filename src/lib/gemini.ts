@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 function safeJSONParse(text: string) {
   try {

@@ -624,7 +624,7 @@ export default function QuizSection({ studentName, addXP, userId }: { studentNam
             <div className="bg-white p-6 rounded-3xl border border-sky-50 shadow-sm relative overflow-hidden">
                <div className="absolute top-0 left-0 w-1 h-full bg-sky-500" />
                <p className="text-[10px] font-bold text-black uppercase tracking-widest mb-1 text-left">Tiềm năng</p>
-               <p className="text-3xl font-display font-black text-sky-900 text-left">+{score * 10}<span className="text-sm ml-1">XP</span></p>
+               <p className="text-3xl font-display font-black text-sky-900 text-left">+{score * 10}<span className="text-sm ml-1">EXP</span></p>
             </div>
             <div className="bg-white p-6 rounded-3xl border border-sky-50 shadow-sm relative overflow-hidden">
                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500" />
@@ -851,7 +851,7 @@ export default function QuizSection({ studentName, addXP, userId }: { studentNam
             </div>
             <div>
                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] leading-none mb-1.5 ">Phần thưởng</p>
-               <p className="text-base font-black text-orange-600 leading-none">+{score * 10} XP</p>
+               <p className="text-base font-black text-orange-600 leading-none">+{score * 10} EXP</p>
             </div>
          </div>
       </div>
@@ -1069,7 +1069,7 @@ export default function QuizSection({ studentName, addXP, userId }: { studentNam
                       onClick={nextQuestion}
                       className="w-full mt-10 bg-sky-600 text-white font-black py-5 rounded-2xl hover:bg-sky-700 transition-all shadow-xl shadow-sky-200/50 flex items-center justify-center gap-3 active:scale-[0.98] uppercase tracking-widest text-[11px]"
                     >
-                      {currentIdx < quizzes.length - 1 ? "Tiếp tục thử thách" : "Hoàn thành & Nhận XP"}
+                      {currentIdx < quizzes.length - 1 ? "Tiếp tục thử thách" : "Hoàn thành & Nhận EXP"}
                       <ChevronRight size={20} />
                     </button>
                   </div>

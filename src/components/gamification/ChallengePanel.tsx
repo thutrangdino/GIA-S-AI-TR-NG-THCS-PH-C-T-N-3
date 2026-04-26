@@ -51,7 +51,7 @@ export function ChallengePanel({ studentData }: { studentData: StudentData | nul
           </motion.div>
         </div>
         <p className="text-xs opacity-90 leading-relaxed font-medium">
-          Duy trì việc học mỗi ngày để nhận thêm x1.5 XP và mở khóa danh hiệu hiếm!
+          Duy trì việc học mỗi ngày để nhận thêm x1.5 EXP và mở khóa danh hiệu hiếm!
         </p>
       </div>
 
@@ -80,7 +80,7 @@ export function ChallengePanel({ studentData }: { studentData: StudentData | nul
                       <h4 className={`text-sm font-bold ${isCompleted ? 'text-sky-900 line-through' : 'text-slate-800'}`}>
                         {challenge.title}
                       </h4>
-                      <span className="text-[10px] font-black text-sky-600">+{challenge.xpReward} XP</span>
+                      <span className="text-[10px] font-black text-sky-600">+{challenge.xpReward} EXP</span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1">{challenge.description}</p>
                   </div>

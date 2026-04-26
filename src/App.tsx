@@ -73,7 +73,8 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        await syncStudentData(currentUser);
+        const syncedData = await syncStudentData(currentUser);
+        setStudentData(syncedData);
         
         // Initial admin check
         const adminStatus = await checkIfAdmin(currentUser.uid) || 
@@ -103,7 +104,7 @@ export default function App() {
              const data = doc.data();
              setStudentData(data);
              // Re-check admin status whenever student data updates
-             if (isTeacher(data.displayName) || data.isAdmin || isTeacher(user?.displayName || "")) {
+             if (isTeacher(data.displayName) || data.isAdmin || isTeacher(currentUser?.displayName || "")) {
                setIsAdmin(true);
              }
           }
@@ -246,7 +247,7 @@ export default function App() {
                   {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
                 <div className="text-right hidden sm:block">
-                  <p className="text-[10px] text-black font-black uppercase tracking-widest">Học sinh</p>
+                  <p className="text-[10px] text-black font-black uppercase tracking-widest">Họ và tên</p>
                   <div className="flex items-center group/name cursor-pointer" onClick={() => setShowProfileEdit(true)}>
                     <p className="text-sm font-bold text-black group-hover/name:text-sky-600 transition-colors">{studentData?.displayName || user.displayName || "Đang tải..."}</p>
                     <Settings size={12} className="ml-1.5 text-black group-hover/name:text-sky-400 transition-colors" />
@@ -393,7 +394,7 @@ export default function App() {
                       <h3 className="font-bold text-black uppercase text-[10px] tracking-[0.2em]">Cấp độ hiện tại</h3>
                       <span className="text-4xl font-display font-black text-sky-600 tracking-tighter">
                         {(studentData?.xp || 0).toLocaleString()} 
-                        <span className="text-xs text-black font-black uppercase ml-2 tracking-widest">XP</span>
+                        <span className="text-xs text-black font-black uppercase ml-2 tracking-widest">EXP</span>
                       </span>
                    </div>
                    <div className="flex flex-col items-end gap-2">
@@ -418,7 +419,7 @@ export default function App() {
                 </div>
                 <p className="text-[10px] text-right text-black font-black uppercase tracking-widest">
                     {getRank(studentData?.xp || 0).max !== Infinity 
-                      ? `+${(getRank(studentData?.xp || 0).max + 1) - (studentData?.xp || 0)} XP ĐẾN ${RANKS[RANKS.findIndex(r => r.name === getRank(studentData?.xp || 0).name) + 1]?.name?.toUpperCase() || ''}` 
+                      ? `+${(getRank(studentData?.xp || 0).max + 1) - (studentData?.xp || 0)} EXP ĐẾN ${RANKS[RANKS.findIndex(r => r.name === getRank(studentData?.xp || 0).name) + 1]?.name?.toUpperCase() || ''}` 
                       : "Cấp độ tối đa"}
                 </p>
               </div>
@@ -623,6 +624,7 @@ function LoginScreen({ schoolLogo }: { schoolLogo: string | null }) {
     setIsLoggingIn(true);
     try {
       const user = await studentLogin(studentName.trim(), password.trim());
+      await syncStudentData(user, { displayName: studentName.trim() });
       
       if (selectedImageFile) {
          try {
@@ -648,9 +650,12 @@ function LoginScreen({ schoolLogo }: { schoolLogo: string | null }) {
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-10 text-center"
       >
-        <div className="mb-8 mt-4">
-          <h1 className="text-3xl font-display font-black text-sky-900 mb-2 tracking-tight">Gia sư AI KHTN</h1>
-          <p className="text-black font-bold text-sm tracking-tight uppercase">Trường THCS Phước Tân 3</p>
+        <div className="mb-8 mt-4 flex items-center justify-center gap-4">
+          {schoolLogo && <img src={schoolLogo} alt="Logo" className="w-16 h-16 object-contain" />}
+          <div>
+            <h1 className="text-3xl font-display font-black text-sky-900 mb-2 tracking-tight">Gia sư AI KHTN</h1>
+            <p className="text-black font-bold text-sm tracking-tight uppercase">Trường THCS Phước Tân 3</p>
+          </div>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -699,7 +704,7 @@ function LoginScreen({ schoolLogo }: { schoolLogo: string | null }) {
         </form>
 
         <p className="mt-8 text-[10px] text-slate-400 font-bold leading-relaxed bg-slate-50 px-6 py-4 rounded-3xl border border-slate-100 text-left italic">
-          💡 <b>Lưu ý:</b> Nếu là lần đầu, em hãy tự đặt một mật khẩu. Lần sau chỉ cần đúng <b>Tên & Mật khẩu</b> này là điểm XP cũ sẽ được giữ nguyên.
+          💡 <b>Lưu ý:</b> Nếu là lần đầu, em hãy tự đặt một mật khẩu. Lần sau chỉ cần đúng <b>Tên & Mật khẩu</b> này là điểm EXP cũ sẽ được giữ nguyên.
         </p>
 
         <p className="mt-10 text-[9px] text-slate-400 font-medium uppercase tracking-widest leading-relaxed">

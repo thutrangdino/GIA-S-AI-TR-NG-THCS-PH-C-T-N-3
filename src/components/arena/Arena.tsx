@@ -12,10 +12,11 @@ let socket: Socket;
 
 export default function Arena({ studentName, addXP, totalXP }: { studentName: string; addXP: (xp: number) => void; totalXP: number }) {
   const [players, setPlayers] = useState<any[]>([]);
-  const [status, setStatus] = useState<"lobby" | "matching" | "battle" | "result" | "ai-config">("lobby");
+  const [status, setStatus] = useState<"lobby" | "matching" | "battle" | "result" | "ai-config" | "challenge-received" | "challenge-config">("lobby");
   const [view, setView] = useState<"main" | "leaderboard">("main");
   const [isAiMode, setIsAiMode] = useState(false);
   const [battleConfig, setBattleConfig] = useState({ grade: "", topic: "", type: "Trắc nghiệm", count: 5 });
+  const [configRole, setConfigRole] = useState<"proposer" | "reviewer" | "waiting">("waiting");
   const [battleData, setBattleData] = useState<any>(null);
   const [scores, setScores] = useState<any>({});
   const [questions, setQuestions] = useState<any[]>([]);
@@ -26,6 +27,10 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [userStats, setUserStats] = useState({ wins: 0, total: 0 });
   const [errorMsg, setErrorMsg] = useState("");
+
+  const [challengeTarget, setChallengeTarget] = useState("");
+  const [incomingChallenge, setIncomingChallenge] = useState<any>(null);
+  const [challengeRejects, setChallengeRejects] = useState(0);
 
   useEffect(() => {
     socket = io();
@@ -48,11 +53,68 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
       handleBattleFinish(data);
     });
 
+    // Challenge flow handlers
+    socket.on("challenge-received", (data) => {
+      setIncomingChallenge(data.challenger);
+      setStatus("challenge-received");
+    });
+
+    socket.on("challenge-error", (data) => {
+      alert(data.message);
+      setStatus("lobby");
+    });
+
+    socket.on("challenge-sent", (data) => {
+      setBattleData({ opponent: data.target });
+      setStatus("matching");
+    });
+
+    socket.on("challenge-accepted", (data) => {
+      setBattleData({ opponent: data.opponent });
+      setConfigRole("proposer");
+      setStatus("challenge-config");
+      setBattleConfig(prev => ({ ...prev, topic: "" }));
+    });
+
+    socket.on("challenge-rejected", () => {
+      alert("Chiến binh đã từ chối lời mời.");
+      setStatus("lobby");
+      setBattleData(null);
+    });
+
+    socket.on("challenge-config-received", (data) => {
+      setBattleConfig(data.config);
+      setConfigRole("reviewer");
+      setStatus("challenge-config");
+    });
+
+    socket.on("config-rejected", () => {
+      setChallengeRejects(prev => {
+        const next = prev + 1;
+        if (next >= 5) {
+          alert("Thách đấu không thành công. Lời đề xuất thứ 5 đã bị từ chối.");
+          socket.emit("cancel-challenge-flow", { targetId: battleData?.opponent?.id });
+          setStatus("lobby");
+          return 0;
+        } else {
+          alert(`Đối thủ đang đề xuất chủ đề khác (${next}/5).`);
+          setConfigRole("waiting");
+          return next;
+        }
+      });
+    });
+
+    socket.on("challenge-flow-cancelled", () => {
+      alert("Thách đấu không thành công.");
+      setStatus("lobby");
+      setBattleData(null);
+    });
+
     fetchLeaderboard();
     return () => {
       socket.disconnect();
     };
-  }, [studentName]);
+  }, [studentName, battleData?.target?.id]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -75,13 +137,34 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
     setBattleData(data);
     try {
       setStatus("matching"); // Show loading during generation
-      const kbSnap = await getDocs(query(collection(db, "knowledge_base"), limit(20)));
-      const context = kbSnap.docs.map(d => d.data().content).join("\n\n");
-      const quizData = await generateQuiz("KHTN THCS (Vật lý, Hóa học, Sinh học)", context);
+      const topic = data.config?.topic || "KHTN THCS (Vật lý, Hóa học, Sinh học)";
+      
+      const knowledgeRef = collection(db, "knowledge_base");
+      const snap = await getDocs(query(knowledgeRef, limit(20)));
+      const chunks = snap.docs.map(d => d.data().content as string);
+      
+      let context = chunks.join("\n\n");
+      // Basic context filtering if specific topic
+      if (data.config?.topic) {
+        const keywords = topic.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+        context = chunks.map(content => {
+          let score = 0;
+          const lowContent = content.toLowerCase();
+          keywords.forEach(word => { if (lowContent.includes(word)) score++; });
+          return { content, score };
+        }).filter(item => item.score > 0).sort((a, b) => b.score - a.score).map(item => item.content).join("\n\n---\n\n");
+      }
+
+      const quizData = await generateQuiz(topic, context, data.config?.grade || "8", data.config?.type || "Trắc nghiệm", data.config?.count || 10);
+      
+      if (quizData.error) throw new Error(quizData.error);
+      
       setQuestions(quizData.quizzes || []);
       setStatus("battle");
       setScores({ [socket.id]: 0, [data.opponent.id]: 0 });
     } catch (err) {
+      alert("Lỗi khi tạo trận đấu. Vui lòng thử lại.");
+      socket.emit("cancel-challenge-flow", { targetId: data.opponent?.id });
       setStatus("lobby");
     }
   };
@@ -89,6 +172,11 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
   const startAiMatch = () => {
     setIsAiMode(true);
     setStatus("ai-config");
+  };
+
+  const sendChallenge = () => {
+    if (!challengeTarget.trim()) return;
+    socket.emit("send-challenge", { targetUsername: challengeTarget });
   };
 
   const confirmAiBattle = async () => {
@@ -196,7 +284,11 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
 
   const cancelMatch = () => {
     setStatus("lobby");
-    socket.emit("cancel-match");
+    if (battleData?.target) {
+      socket.emit("cancel-challenge-flow", { targetId: battleData.target.id });
+    } else {
+      socket.emit("cancel-match");
+    }
   };
 
   if (status === "ai-config") {
@@ -315,6 +407,86 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
     );
   }
 
+  if (status === "challenge-config") {
+    return (
+      <div className="max-w-4xl mx-auto h-[70vh] flex flex-col justify-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white p-10 md:p-16 rounded-[3.5rem] border border-sky-50 shadow-2xl relative overflow-hidden"
+        >
+           <h3 className="text-3xl font-display font-black text-sky-900 mb-8 uppercase tracking-tight">
+             {configRole === "proposer" ? "Tạo chủ đề thách đấu" : configRole === "waiting" ? "Chờ đối thủ" : "Xác nhận chủ đề"}
+           </h3>
+
+           {configRole === "proposer" ? (
+             <div className="space-y-6">
+                <div>
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">📚 Chủ đề đề xuất</label>
+                  <input 
+                    type="text" 
+                    value={battleConfig.topic}
+                    onChange={(e) => setBattleConfig(prev => ({ ...prev, topic: e.target.value }))}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-5 outline-none focus:border-sky-500 font-bold text-sky-900 mt-2"
+                  />
+                </div>
+                <button 
+                  onClick={() => {
+                    socket.emit("send-challenge-config", { targetId: battleData.opponent.id, config: { ...battleConfig, type: "Trắc nghiệm", count: 10 } });
+                    setConfigRole("waiting");
+                  }}
+                  disabled={!battleConfig.topic}
+                  className="w-full bg-sky-600 text-white font-black py-5 rounded-2xl uppercase tracking-widest hover:bg-sky-700 disabled:opacity-50"
+                >
+                  Đề xuất chủ đề
+                </button>
+             </div>
+           ) : configRole === "waiting" ? (
+             <div className="space-y-8 text-center p-8">
+                <div className="w-16 h-16 border-4 border-sky-100 border-t-sky-500 rounded-full animate-spin mx-auto mb-6"></div>
+                <p className="text-xl font-black text-sky-900">Đang chờ đối thủ xử lý...</p>
+             </div>
+           ) : (
+             <div className="space-y-8 text-center">
+                <div className="p-8 bg-sky-50 rounded-3xl border border-sky-100">
+                   <p className="text-[10px] font-black text-sky-600 uppercase tracking-widest mb-2">Chủ đề được đề xuất:</p>
+                   <p className="text-2xl font-black text-sky-900">{battleConfig.topic || "KHTN THCS"}</p>
+                </div>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => {
+                      setChallengeRejects(prev => {
+                        const next = prev + 1;
+                        if (next >= 5) {
+                          alert("Thách đấu không thành công. Bạn đã từ chối quá 5 lần.");
+                          socket.emit("cancel-challenge-flow", { targetId: battleData.opponent.id });
+                          setStatus("lobby");
+                          return 0;
+                        }
+                        setConfigRole("proposer");
+                        socket.emit("reject-config", { opponentId: battleData.opponent.id });
+                        setBattleConfig(prevConfig => ({ ...prevConfig, topic: "" }));
+                        return next;
+                      });
+                    }}
+                    className="flex-1 py-5 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-slate-200 transition-all"
+                  >
+                    Đề xuất chủ đề khác
+                  </button>
+                  <button 
+                    onClick={() => socket.emit("accept-config", { opponentId: battleData.opponent.id, config: battleConfig })}
+                    className="flex-1 py-5 bg-sky-600 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-sky-700 shadow-xl shadow-sky-200 transition-all"
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+             </div>
+           )}
+        </motion.div>
+      </div>
+    );
+  }
+
   if (status === "matching") {
     return (
       <div className="max-w-4xl mx-auto h-[70vh] flex flex-col items-center justify-center relative px-6 text-center">
@@ -349,10 +521,11 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
               </div>
               <div className="space-y-4">
                 <h3 className="text-3xl md:text-5xl font-display font-black text-sky-900 tracking-tight uppercase leading-tight max-w-4xl mx-auto px-4">
-                  {isAiMode ? "Đề thi đang sẵn sàng. Chúc em may mắn!" : "Đang tìm đối thủ..."}
+                  {isAiMode ? "Đề thi đang sẵn sàng. Chúc em may mắn!" : 
+                   battleData?.target ? `Đang chờ ${battleData.target.username} phản hồi...` : "Đề thi đang sẵn sàng..."}
                 </h3>
                 <p className="text-slate-400 font-bold tracking-[0.3em] uppercase text-[11px]">
-                  {isAiMode ? "Vui lòng đợi trong giây lát" : "Ghép cặp ngẫu nhiên tại Trường Phước Tân 3"}
+                  {isAiMode ? "Vui lòng đợi trong giây lát" : "Chuẩn bị vào đấu trường"}
                 </p>
               </div>
               <div className="flex justify-center gap-2">
@@ -591,14 +764,38 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                       <div 
-                        className="bg-gradient-to-br from-sky-500 to-sky-700 rounded-[2rem] p-6 text-white shadow-2xl group cursor-pointer relative overflow-hidden h-48 flex flex-col"
-                        onClick={findMatch}
+                        className="bg-gradient-to-br from-sky-500 to-sky-700 rounded-[2rem] p-6 text-white shadow-2xl relative flex flex-col h-48"
                       >
-                        <Users size={80} className="absolute -right-4 -bottom-4 opacity-20 group-hover:scale-110 transition-transform" />
-                        <h4 className="text-xl font-display font-black mb-2">Thách đấu đôi</h4>
-                        <p className="text-sky-100 text-xs mb-8 leading-relaxed font-medium">Tìm kiếm đối thủ ngẫu nhiên.</p>
-                        <div className="mt-auto">
-                          <button className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">Tìm trận</button>
+                        <h4 className="text-xl font-display font-black mb-2 relative z-10">Thách đấu đôi</h4>
+                        <Users size={80} className="absolute -right-4 -bottom-4 opacity-20 pointer-events-none" />
+                        <div className="mt-auto relative z-10 flex flex-col gap-2">
+                          {incomingChallenge ? (
+                             <div className="text-center">
+                               <p className="text-[11px] font-bold mb-2 text-sky-100">Lời mời từ: <span className="font-black text-white">{incomingChallenge.username}</span></p>
+                               <div className="flex gap-2">
+                                 <button onClick={() => { socket.emit("reject-challenge", { challengerId: incomingChallenge.id }); setIncomingChallenge(null); }} className="flex-1 bg-white/20 hover:bg-white/30 py-2.5 outline-none rounded-xl text-[10px] uppercase tracking-widest font-bold">Từ chối</button>
+                                 <button onClick={() => { socket.emit("accept-challenge", { challengerId: incomingChallenge.id }); setBattleData({ challengerId: incomingChallenge.id, target: { id: socket.id } }); setStatus("challenge-config"); setIncomingChallenge(null); }} className="flex-1 bg-orange-500 hover:bg-orange-600 py-2.5 outline-none tracking-widest uppercase rounded-xl text-[10px] font-bold">Chấp nhận</button>
+                               </div>
+                             </div>
+                          ) : (
+                            <>
+                              <input 
+                                type="text" 
+                                placeholder="Tìm kiếm đối thủ..."
+                                value={challengeTarget}
+                                onChange={(e) => setChallengeTarget(e.target.value)}
+                                className="w-full bg-white/20 border border-white/30 focus:border-white/60 focus:bg-white/30 rounded-xl px-4 py-2.5 outline-none placeholder:text-white/60 text-sm font-bold transition-all"
+                              />
+                              {challengeTarget.trim() && players.some(p => p.username.toLowerCase() === challengeTarget.toLowerCase().trim() && p.username !== studentName) && (
+                                <button 
+                                  onClick={sendChallenge}
+                                  className="w-full bg-white text-sky-700 hover:bg-sky-50 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md"
+                                >
+                                  Gửi lời mời thách đấu
+                                </button>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -778,7 +975,7 @@ function ActiveBattle({ battleId, opponent, questions, scores, onFinish, isAiMod
         setShowExplanation(true);
       }, 800);
     } else {
-      socket.emit("submit-battle-answer", { battleId, correct, timeLeft });
+      socket.emit("submit-battle-answer", { battleId, questionIdx: currentIdx, correct, timeLeft });
       setTimeout(() => {
         if (currentIdx < questions.length - 1) {
           nextQuestion();
@@ -845,7 +1042,7 @@ function ActiveBattle({ battleId, opponent, questions, scores, onFinish, isAiMod
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Của em</p>
                 <div className="flex items-baseline gap-2">
                    <p className="text-3xl font-display font-black text-sky-900">{myScore}</p>
-                   <span className="text-[10px] font-bold text-sky-500">XP</span>
+                   <span className="text-[10px] font-bold text-sky-500">EXP</span>
                 </div>
              </div>
           </div>
@@ -973,7 +1170,7 @@ function ActiveBattle({ battleId, opponent, questions, scores, onFinish, isAiMod
                         </div>
                         <p className="text-sm text-orange-900 font-bold leading-relaxed mb-1">Ồ, suy nghĩ lại một chút nhé! Đây là manh mối cho em:</p>
                         <p className="text-base text-orange-900 font-black italic">"{current.hint || "Hãy xem lại dữ kiện trong câu hỏi."}"</p>
-                        <p className="text-[9px] text-orange-600 font-black uppercase mt-4">Em còn 1 cơ hội nữa - Tự sửa đúng sẽ được +30 XP!</p>
+                        <p className="text-[9px] text-orange-600 font-black uppercase mt-4">Em còn 1 cơ hội nữa - Tự sửa đúng sẽ được +30 EXP!</p>
                      </div>
                      <button 
                        onClick={() => setShowHint(false)}

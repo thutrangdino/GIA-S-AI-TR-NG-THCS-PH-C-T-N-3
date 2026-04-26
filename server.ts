@@ -77,6 +77,82 @@ async function startServer() {
       io.emit("players-update", Array.from(players.values()));
     });
 
+    socket.on("send-challenge", ({ targetUsername }) => {
+      const challenger = players.get(socket.id);
+      if (!challenger || challenger.status !== "idle") return;
+
+      const targetPlayer = Array.from(players.values()).find(p => p.username === targetUsername);
+      if (targetPlayer && targetPlayer.status === "idle" && targetPlayer.id !== socket.id) {
+        targetPlayer.status = "matching";
+        challenger.status = "matching";
+        io.to(targetPlayer.id).emit("challenge-received", { challenger });
+        io.to(socket.id).emit("challenge-sent", { target: targetPlayer });
+      } else {
+        io.to(socket.id).emit("challenge-error", { message: "Chiến binh không online hoặc đang bận." });
+      }
+      io.emit("players-update", Array.from(players.values()));
+    });
+
+    socket.on("accept-challenge", ({ challengerId }) => {
+      const p1 = players.get(challengerId);
+      const p2 = players.get(socket.id);
+      if (p1 && p2) {
+        io.to(challengerId).emit("challenge-accepted", { opponent: p2 });
+      }
+    });
+
+    socket.on("reject-challenge", ({ challengerId }) => {
+      const p1 = players.get(challengerId);
+      const p2 = players.get(socket.id);
+      if (p1) {
+        p1.status = "idle";
+        io.to(challengerId).emit("challenge-rejected");
+      }
+      if (p2) p2.status = "idle";
+      io.emit("players-update", Array.from(players.values()));
+    });
+
+    socket.on("send-challenge-config", ({ targetId, config }) => {
+      io.to(targetId).emit("challenge-config-received", { config, challengerId: socket.id });
+    });
+
+    socket.on("accept-config", ({ opponentId, config }) => {
+      const p1 = players.get(opponentId); 
+      const p2 = players.get(socket.id); 
+
+      if (p1 && p2) {
+        const battleId = `battle-${p1.id}-${p2.id}`;
+        p1.status = "in-battle";
+        p2.status = "in-battle";
+        
+        activeBattles.set(battleId, {
+          id: battleId,
+          players: [p1, p2],
+          scores: { [p1.id]: 0, [p2.id]: 0 },
+          answers: {},
+          finished: { [p1.id]: false, [p2.id]: false }
+        });
+
+        // Emit match-found to start setup process, along with config
+        io.to(p1.id).emit("match-found", { battleId, opponent: p2, config });
+        io.to(p2.id).emit("match-found", { battleId, opponent: p1, config });
+        io.emit("players-update", Array.from(players.values()));
+      }
+    });
+
+    socket.on("reject-config", ({ opponentId }) => {
+      io.to(opponentId).emit("config-rejected");
+    });
+
+    socket.on("cancel-challenge-flow", ({ targetId }) => {
+      const p1 = players.get(socket.id);
+      const p2 = players.get(targetId);
+      if (p1) p1.status = "idle";
+      if (p2) p2.status = "idle";
+      io.to(targetId).emit("challenge-flow-cancelled");
+      io.emit("players-update", Array.from(players.values()));
+    });
+
     socket.on("find-match", () => {
       const player = players.get(socket.id);
       if (!player || player.status !== "idle") return;
@@ -99,6 +175,7 @@ async function startServer() {
             id: battleId,
             players: [p1, p2],
             scores: { [p1Id]: 0, [p2Id]: 0 },
+            answers: {},
             finished: { [p1Id]: false, [p2Id]: false }
           });
 
@@ -117,14 +194,39 @@ async function startServer() {
       io.emit("players-update", Array.from(players.values()));
     });
 
-    socket.on("submit-battle-answer", ({ battleId, correct, timeLeft }) => {
+    socket.on("submit-battle-answer", ({ battleId, questionIdx, correct, timeLeft }) => {
       const battle = activeBattles.get(battleId);
       if (battle) {
-        if (correct) {
-          const points = 10 + timeLeft;
-          battle.scores[socket.id] += points;
+        if (!battle.answers[questionIdx]) {
+          battle.answers[questionIdx] = {};
         }
-        io.to(battle.players[0].id).to(battle.players[1].id).emit("battle-update", { scores: battle.scores });
+        battle.answers[questionIdx][socket.id] = { correct, timeLeft };
+
+        // If both players have answered this question, score it!
+        const p1Id = battle.players[0].id;
+        const p2Id = battle.players[1].id;
+        const ans1 = battle.answers[questionIdx][p1Id];
+        const ans2 = battle.answers[questionIdx][p2Id];
+
+        if (ans1 && ans2) {
+          if (ans1.correct && ans2.correct) {
+            // Both correct, give 5 points to the faster one
+             if (ans1.timeLeft > ans2.timeLeft) {
+               battle.scores[p1Id] += 5;
+             } else if (ans2.timeLeft > ans1.timeLeft) {
+               battle.scores[p2Id] += 5;
+             } else {
+               // Tie -> both get 5? Or neither? Let's give both 5
+               battle.scores[p1Id] += 5;
+               battle.scores[p2Id] += 5;
+             }
+          } else if (ans1.correct && !ans2.correct) {
+             battle.scores[p1Id] += 5;
+          } else if (!ans1.correct && ans2.correct) {
+             battle.scores[p2Id] += 5;
+          }
+           io.to(p1Id).to(p2Id).emit("battle-update", { scores: battle.scores });
+        }
       }
     });
 
