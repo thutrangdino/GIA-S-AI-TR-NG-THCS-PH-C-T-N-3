@@ -415,8 +415,8 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white p-10 md:p-16 rounded-[3.5rem] border border-sky-50 shadow-2xl relative overflow-hidden"
         >
-           <h3 className="text-3xl font-display font-black text-sky-900 mb-8 uppercase tracking-tight">
-             {configRole === "proposer" ? "Tạo chủ đề thách đấu" : configRole === "waiting" ? "Chờ đối thủ" : "Xác nhận chủ đề"}
+           <h3 className="text-3xl font-display font-black text-sky-900 mb-8 uppercase tracking-tight text-center">
+             {configRole === "proposer" ? "Tạo chủ đề thách đấu" : configRole === "waiting" ? "Chờ đối thủ" : "Chủ đề thách đấu"}
            </h3>
 
            {configRole === "proposer" ? (
@@ -449,7 +449,7 @@ export default function Arena({ studentName, addXP, totalXP }: { studentName: st
            ) : (
              <div className="space-y-8 text-center">
                 <div className="p-8 bg-sky-50 rounded-3xl border border-sky-100">
-                   <p className="text-[10px] font-black text-sky-600 uppercase tracking-widest mb-2">Chủ đề được đề xuất:</p>
+                   <p className="text-[10px] font-black text-sky-600 uppercase tracking-widest mb-2">Chủ đề thách đấu:</p>
                    <p className="text-2xl font-black text-sky-900">{battleConfig.topic || "KHTN THCS"}</p>
                 </div>
                 <div className="flex gap-4">

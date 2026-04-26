@@ -114,19 +114,27 @@ export async function askGiaSu(message: string, history: any[], context: string,
     });
   }
 
-  const response = await ai.models.generateContent({
-    model,
-    contents: [
-      ...history.map(h => ({ role: h.role, parts: h.parts })),
-      { role: "user", parts }
-    ],
-    config: {
-      systemInstruction,
-      temperature: 0.7,
-    }
-  });
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: [
+        ...history.map(h => ({ role: h.role, parts: h.parts })),
+        { role: "user", parts }
+      ],
+      config: {
+        systemInstruction,
+        temperature: 0.7,
+      }
+    });
 
-  return response.text;
+    return response.text;
+  } catch (error: any) {
+    console.error("Gemini API Error in handleAIRequest:", error);
+    if (error?.status === "RESOURCE_EXHAUSTED" || error?.status === 429 || error?.message?.includes("exceeded your current quota")) {
+      return "Hệ thống AI đang quá tải hoặc đã hết lượt kết nối miễn phí hôm nay. Xin lỗi em, em vui lòng quay lại sau nhé!";
+    }
+    return "Có lỗi xảy ra khi kết nối. Xin vui lòng thử lại sau.";
+  }
 }
 
 export async function generateQuiz(topic: string, context: string, grade?: string, type?: string, count?: number) {
@@ -177,15 +185,24 @@ export async function generateQuiz(topic: string, context: string, grade?: strin
       ]
     }`;
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json"
-        }
-    });
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json"
+            }
+        });
 
-    return safeJSONParse(response.text || "{}");
+        return safeJSONParse(response.text || "{}");
+    } catch (error: any) {
+        console.error("Gemini API Error:", error);
+        let errorMsg = "Lỗi khi khởi tạo AI. Vui lòng thử lại.";
+        if (error?.status === "RESOURCE_EXHAUSTED" || error?.status === 429 || error?.message?.includes("exceeded your current quota")) {
+            errorMsg = "Hệ thống AI đang quá tải hoặc đã hết lượt yêu cầu miễn phí hôm nay. Em quay lại sau nhé!";
+        }
+        return { error: errorMsg };
+    }
 }
 
 export async function generateFlashcards(topic: string, context: string, grade: string) {
